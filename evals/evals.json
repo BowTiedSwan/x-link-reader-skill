@@ -1,0 +1,23 @@
+{
+  "skill_name": "x-link-reader",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I dropped an x.com link in this prompt. Read the post text with the official X API and tell me what it says without asking me to paste the token here.",
+      "expected_output": "Uses the x-link-reader CLI workflow, checks local auth if needed, and fetches the text without requesting secrets in-prompt.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Please read this X article link and give me the exact article text first, then a short summary.",
+      "expected_output": "Uses the official lookup endpoint with article-aware extraction and returns article text before summarizing.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Can you inspect this Twitter status URL, extract the post ID, and fetch the full long-form text if it's a note tweet?",
+      "expected_output": "Parses the URL, calls the lookup endpoint with note_tweet requested, and prefers full long-form text over the truncated display text.",
+      "files": []
+    }
+  ]
+}
