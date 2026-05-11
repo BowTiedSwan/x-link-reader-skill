@@ -30,7 +30,7 @@ ALLOWED_HOSTS = {
     "mobile.twitter.com",
 }
 STATUS_RE = re.compile(r"/(?:status|statuses)/([0-9]{1,19})(?:[/?#]|$)")
-ARTICLE_RE = re.compile(r"/i/articles/([0-9]{1,19})(?:[/?#]|$)")
+ARTICLE_RE = re.compile(r"/i/articles?/([0-9]{1,19})(?:[/?#]|$)")
 ID_RE = re.compile(r"^[0-9]{1,19}$")
 
 
@@ -204,7 +204,7 @@ def parse_target(target):
             return {
                 "id": ident,
                 "url_kind": "article",
-                "normalized_url": f"https://x.com/i/articles/{ident}",
+                "normalized_url": f"https://x.com/i/article/{ident}",
             }
 
         status_match = STATUS_RE.search(parsed.path)
@@ -217,7 +217,7 @@ def parse_target(target):
             }
 
     raise CliError(
-        "Unsupported X/Twitter URL. Expected a /status/<id> or /i/articles/<id> link, or a bare numeric ID."
+        "Unsupported X/Twitter URL. Expected a /status/<id> or /i/article/<id> (or /i/articles/<id>) link, or a bare numeric ID."
     )
 
 
@@ -254,14 +254,58 @@ def fetch_lookup(tweet_id, bearer_token, timeout):
     return api_url, data["data"], data
 
 
+def first_non_empty_string(value):
+    if isinstance(value, str):
+        text = value.strip()
+        return text or None
+    return None
+
+
+def flatten_article_blocks(value):
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+
+    if isinstance(value, list):
+        parts = []
+        for item in value:
+            parts.extend(flatten_article_blocks(item))
+        return parts
+
+    if isinstance(value, dict):
+        for key in ("text", "body", "content", "article_text", "full_text"):
+            direct = first_non_empty_string(value.get(key))
+            if direct:
+                return [direct]
+
+        for key in ("blocks", "items", "sections", "paragraphs", "content"):
+            nested_value = value.get(key)
+            nested_parts = flatten_article_blocks(nested_value)
+            if nested_parts:
+                return nested_parts
+
+        parts = []
+        for nested_value in value.values():
+            nested_parts = flatten_article_blocks(nested_value)
+            if nested_parts:
+                parts.extend(nested_parts)
+        return parts
+
+    return []
+
+
 def extract_article_text(article_obj):
     if not isinstance(article_obj, dict):
         return None
-    for key in ("text", "body", "content"):
-        value = article_obj.get(key)
-        if isinstance(value, str) and value.strip():
-            return value
-    return None
+
+    direct_text = first_non_empty_string(article_obj.get("text"))
+    if direct_text:
+        return direct_text
+
+    parts = flatten_article_blocks(article_obj)
+    if not parts:
+        return None
+    return "\n\n".join(parts)
 
 
 def normalize_record(parsed_target, input_target, api_url, tweet_obj):
