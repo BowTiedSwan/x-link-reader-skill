@@ -41,6 +41,17 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
+## OpenClaw / ClawHub notes
+
+This repo now includes OpenClaw-oriented metadata in `SKILL.md` for:
+
+- required environment variables: `X_API_BEARER_TOKEN`, `X_API_KEY`, `X_API_SECRET`
+- required binary: `python3`
+- supported OS targets: `darwin`, `linux`
+- primary credential: `X_API_BEARER_TOKEN`
+
+For OpenClaw-style runtimes, prefer injecting credentials through environment variables instead of relying on local Keychain access. That is the most portable and review-friendly setup for marketplace-style skill installs.
+
 ## Configure auth
 
 Preferred: store a bearer token once.
@@ -76,6 +87,8 @@ chmod 600 ~/.zshrc.local
 
 Do not store X credentials in this repo, in committed `.env` files, in git config, or in prompt text.
 
+For OpenClaw/ClawHub packaging, treat environment variables as the canonical secret path and Keychain as a local macOS convenience only.
+
 Check which auth source the CLI can see:
 
 ```bash
@@ -94,7 +107,7 @@ x-link-reader auth clear
 x-link-reader auth status
 x-link-reader parse "https://x.com/someone/status/1234567890123456789"
 x-link-reader fetch "https://x.com/someone/status/1234567890123456789"
-x-link-reader fetch "https://x.com/i/articles/1234567890123456789" --text-only
+x-link-reader fetch "https://x.com/i/article/1234567890123456789" --text-only
 ```
 
 ### How the skill is used
@@ -129,6 +142,11 @@ The CLI requests `tweet.fields=note_tweet,article,entities,author_id,created_at`
 2. `data.note_tweet.text`
 3. `data.text`
 
+Both X article URL shapes are accepted:
+
+- `https://x.com/i/article/<id>`
+- `https://x.com/i/articles/<id>`
+
 ## Repo contents
 
 - `SKILL.md`: skill definition and usage instructions
@@ -143,6 +161,12 @@ The CLI requests `tweet.fields=note_tweet,article,entities,author_id,created_at`
 - Credentials are loaded from macOS Keychain when stored there, or from environment variables when you prefer that setup.
 - No credential file is checked into the repository.
 - Rotating credentials only requires rerunning `x-link-reader auth set-bearer`, `x-link-reader auth set-client`, or updating your private environment file.
+- All API calls go only to `https://api.x.com`.
+- This repo does not forward retrieved X content or credentials to third-party services.
+
+## OpenClaw publish caveats
+
+This repo is closer to OpenClaw/ClawHub-ready now, but it does not yet include any owner-specific registry metadata such as `_meta.json` values that depend on a real marketplace account. If ClawHub requires registry-side metadata during publish, add those values at publish time rather than hardcoding guessed fields into the repo.
 
 ## GitHub publishing
 

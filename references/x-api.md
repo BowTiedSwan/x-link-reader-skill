@@ -43,6 +43,7 @@ Use text in this order:
 
 - `https://x.com/<user>/status/<id>`
 - `https://twitter.com/<user>/status/<id>`
+- `https://x.com/i/article/<id>`
 - `https://x.com/i/articles/<id>`
 
 ## Output contract
